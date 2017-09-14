@@ -1,0 +1,157 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <!-- ========基础设置======== -->
+  <modelVersion>4.0.0</modelVersion><!--必须,指定当前POM模型的版本,对于MAVEN2/3来说它只能4.0.0-->
+  <organization><!--可选，组织信息-->
+    <name>Hunan Hisun Union Information Technology Co, Ltd.</name>
+    <url>http://www.hn-hisun.com/</url>
+  </organization>
+  <groupId>com.hisun</groupId><!--必须,组织名称.groupId,artifactId,version三个元素定义了一个项目的基本坐标(唯一)-->
+  <artifactId>hisun-commons</artifactId><!--必须,工件名称-->
+  <version>1.0</version><!--必须,工件版本号-->
+  <packaging>jar</packaging><!--可选,默认为jar包-->
+  <name>hisun-commons</name><!--可选,项目名称(一个相对于坐标更友好的名称)-->
+  <parent>
+    <groupId>com.hisun</groupId>
+    <artifactId>hisun-pom</artifactId>
+    <version>1.0</version>
+    <relativePath>../hisun/pom.xml</relativePath>
+  </parent>
+
+  <repositories>
+    <repository>
+      <id>AsposeJavaAPI</id>
+      <name>Aspose Java API</name>
+      <url>http://maven.aspose.com/artifactory/simple/ext-release-local/</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.belerweb</groupId>
+      <artifactId>pinyin4j</artifactId>
+      <version>2.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.xerial</groupId>
+      <artifactId>sqlite-jdbc</artifactId>
+      <version>3.14.2</version>
+    </dependency>
+    <!-- Pdf转化为图片-->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <version>2.0.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>fontbox</artifactId>
+      <version>2.0.6</version>
+    </dependency>
+    <!-- Docx转化为Pdf-->
+    <dependency>
+      <groupId>org.docx4j</groupId>
+      <artifactId>docx4j</artifactId>
+      <version>3.3.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.docx4j</groupId>
+      <artifactId>docx4j-export-fo</artifactId>
+      <version>3.3.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.plutext</groupId>
+      <artifactId>jaxb-xslfo</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>fr.opensagres.xdocreport</groupId>
+      <artifactId>org.apache.poi.xwpf.converter.pdf</artifactId>
+      <version>1.0.6</version>
+    </dependency>
+    <!-- Html转化为Pdf-->
+    <dependency>
+      <groupId>org.xhtmlrenderer</groupId>
+      <artifactId>flying-saucer-pdf</artifactId>
+      <version>9.1.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.xhtmlrenderer</groupId>
+      <artifactId>flying-saucer-core</artifactId>
+      <version>9.1.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.xhtmlrenderer</groupId>
+      <artifactId>flying-saucer-pdf-itext5</artifactId>
+      <version>9.1.6</version>
+    </dependency>
+    <!-- Word 转 PDF等格式(商业版) -->
+    <dependency>
+      <groupId>com.aspose</groupId>
+      <artifactId>aspose-words</artifactId>
+      <version>16.8.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/aspose-words-16.8.0-jdk16.jar</systemPath>
+      <classifier>jdk16</classifier>
+    </dependency>
+    <dependency>
+      <groupId>com.aspose</groupId>
+      <artifactId>aspose-cells</artifactId>
+      <version>9.0.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/aspose-cells-9.0.0.jar</systemPath>
+      <classifier>jdk16</classifier>
+    </dependency>
+    <dependency>
+      <groupId>com.aspose</groupId>
+      <artifactId>aspose-slides</artifactId>
+      <version>16.7.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/aspose.slides-16.7.0.jar</systemPath>
+      <classifier>jdk16</classifier>
+    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>com.aspose</groupId>-->
+      <!--<artifactId>aspose-words</artifactId>-->
+      <!--<version>17.8</version>-->
+      <!--<classifier>jdk16</classifier>-->
+    <!--</dependency>-->
+  </dependencies>
+
+  <!-- 生命周期及插件配置-->
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/*</include>
+        </includes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven-resources-plugin.version}</version>
+        <configuration>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>${maven-install-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
