@@ -36,11 +36,17 @@ public class WordUtil {
 
     public static WordUtil newInstance() {
 
-        WordUtil util = new WordUtil();
-        try {
-            util.init();
-        } catch (Exception e) {
-            logger.error(e.getMessage());
+        if(util==null) {
+            synchronized (WordUtil.class){
+                if(util==null){
+                    WordUtil util = new WordUtil();
+                    try {
+                        util.init();
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+            }
         }
         return util;
     }
@@ -169,7 +175,7 @@ public class WordUtil {
 
 
     private void dealRangeCell(NodeCollection cells, String key, int rangeIndex, Map<String, String> result) {
-        result.put(key + "_0", cells.get(rangeIndex).getText());
+        result.put(key + dot+"0", cells.get(rangeIndex).getText());
         int row = this.getRowCount(key);
         int col = this.getColCount(key);
         for (int i = 1; i <= row; i++) {
@@ -177,7 +183,7 @@ public class WordUtil {
             if (rangeCell != null) {
                 String rangeValue = cells.get(rangeIndex + i * col).getText();
                 if (rangeValue != null && trim(rangeValue).equals("") == false) {
-                    result.put(key + "_" + i, rangeValue);
+                    result.put(key + dot + i, rangeValue);
                 } else {
                     break;
                 }
