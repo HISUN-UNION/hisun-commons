@@ -92,7 +92,7 @@
       <version>16.8.0</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/aspose-words-16.8.0-jdk16.jar</systemPath>
-      <classifier>jdk16</classifier>
+      <!--<classifier>jdk16</classifier>-->
     </dependency>
     <dependency>
       <groupId>com.aspose</groupId>
@@ -100,7 +100,7 @@
       <version>9.0.0</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/aspose-cells-9.0.0.jar</systemPath>
-      <classifier>jdk16</classifier>
+      <!--<classifier>jdk16</classifier>-->
     </dependency>
     <dependency>
       <groupId>com.aspose</groupId>
@@ -108,7 +108,7 @@
       <version>16.7.0</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/aspose.slides-16.7.0.jar</systemPath>
-      <classifier>jdk16</classifier>
+      <!--<classifier>jdk16</classifier>-->
     </dependency>
     <!--<dependency>-->
       <!--<groupId>com.aspose</groupId>-->
