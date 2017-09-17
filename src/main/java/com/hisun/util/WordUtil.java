@@ -10,6 +10,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by zhouying on 2017/9/9.
@@ -39,7 +41,7 @@ public class WordUtil {
         if(util==null) {
             synchronized (WordUtil.class){
                 if(util==null){
-                    WordUtil util = new WordUtil();
+                     util = new WordUtil();
                     try {
                         util.init();
                     } catch (Exception e) {
@@ -107,13 +109,16 @@ public class WordUtil {
 
 
     public Map<String, String> convertMapByTemplate(String sourceWordPath, String tmplateWordPath, String imageSaveDir) throws Exception {
+
         Map<String, String> result = new HashMap<String, String>();
         InputStream sourceStream = new FileInputStream(new File(sourceWordPath));
         Document sourceDoc = new Document(sourceStream);
+
         InputStream templateStream = new FileInputStream(new File(tmplateWordPath));
         Document templateDoc = new Document(templateStream);
         Map<String, Integer> templateMap = this.generateTemplateMap(templateDoc);
         //解析Word,找出对应cell的值,形成数据字段与实际数据的映射
+
         NodeCollection cells = sourceDoc.getChildNodes(NodeType.CELL, true);
         for (Iterator<String> it = templateMap.keySet().iterator(); it.hasNext(); ) {
             String key = it.next();
@@ -142,7 +147,13 @@ public class WordUtil {
         if (str == null) {
             return "";
         } else {
-            return StringUtils.trim(str.replace((char) 12288, ' '));
+            //去掉换行符
+            str = str.replaceAll("[\b\r\n)]*", "");
+            str = str.replaceAll("[\u0007]*","");
+            //去掉全角空格
+            str = StringUtils.trim(str.replace((char) 12288, ' '));
+
+            return str;
         }
     }
 
@@ -175,14 +186,15 @@ public class WordUtil {
 
 
     private void dealRangeCell(NodeCollection cells, String key, int rangeIndex, Map<String, String> result) {
-        result.put(key + dot+"0", cells.get(rangeIndex).getText());
+        result.put(key + dot+"0", trim(cells.get(rangeIndex).getText()));
         int row = this.getRowCount(key);
         int col = this.getColCount(key);
         for (int i = 1; i <= row; i++) {
             Cell rangeCell = (Cell) cells.get(rangeIndex + i * col);
             if (rangeCell != null) {
                 String rangeValue = cells.get(rangeIndex + i * col).getText();
-                if (rangeValue != null && trim(rangeValue).equals("") == false) {
+                rangeValue = trim(rangeValue);
+                if (rangeValue != null && rangeValue.equals("") == false) {
                     result.put(key + dot + i, rangeValue);
                 } else {
                     break;
@@ -210,7 +222,9 @@ public class WordUtil {
 
     public static String getSqlField(String str){
         if(str!=null && str.length()>0){
-           return str.substring(str.indexOf(dataPrefix)+1,str.indexOf(datasuffix));
+            String field = str.substring(str.indexOf(dataPrefix)+1,str.indexOf(datasuffix));
+            field = field.substring(field.indexOf(dot)+1);
+           return field;
         }
         return "";
     }
@@ -245,8 +259,8 @@ public class WordUtil {
 
     public static void main(String[] args) throws Exception {
 
-        String wordPath = "/Users/zhouying/Desktop/zzb-app-android/dd.docx";
-        String wordPathTemplate = "/Users/zhouying/Desktop/zzb-app-android/template.docx";
+        String wordPath = "/Users/zhouying/Documents/workspace/store/sha01/2017.docx";
+        String wordPathTemplate = "/Users/zhouying/Documents/workspace/store/sha01/sha01.docx";
 ////        java.util.List<byte[]> images = WordUtil.newInstance().extractImages("/Users/zhouying/Desktop/zzb-app-android/dd.docx");
 ////        String imagePath = "/Users/zhouying/Desktop/zzb-app-android/wordutil.jpg";
 ////        if(images.size()>0){
@@ -334,6 +348,11 @@ public class WordUtil {
 //        }
 //
 //        System.out.println("==="+wordUtil.genInsertSql(dataMap,"1"));
+
+        WordUtil wordUtil  = WordUtil.newInstance();
+        System.out.println(wordUtil.trim("INSERT INTO APP_SH_A01 ( ID,APP_SH_PC_ID,A01_PX ,ywfpjl,mztjqk,xm,whcd,jg,xb,xgzdwjzw,ntzpbyj,cjgzsj,mz,rdsj,rxjbsj,shyj,csny ) VALUES ('4585aac4080d4f9ab3e0638d051f57b8','402880e95e8ad4ec015e8ad5df850001',1,'\u0007','\u0007','鲍忠银\u0007','在职\r研究生\u0007','长沙\u0007','男\u0007','州公共资源交易中心党组书记、主任\u0007','免现职\u0007','83.8\u0007','土家\u0007','87.6\u0007','15.10\u0007','同意\u0007','64.9\u0007')]"));
+
+
     }
 
 }
