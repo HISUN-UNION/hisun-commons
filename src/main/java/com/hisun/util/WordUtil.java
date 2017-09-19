@@ -124,7 +124,9 @@ public class WordUtil {
             String key = it.next();
             Integer value = templateMap.get(key);
             if (key.startsWith(imageSign)) {
-                result.put(key, this.dealImageCell(sourceDoc, imageSaveDir));
+                if(imageSaveDir!=null && imageSaveDir.length()>0) {
+                    result.put(key, this.dealImageCell(sourceDoc, imageSaveDir));
+                }
             } else if (key.startsWith(rangeSign)) {
                 this.dealRangeCell(cells,key,value.intValue(),result);
 
@@ -142,13 +144,18 @@ public class WordUtil {
     }
 
 
+    public Map<String, String> convertMapByTemplate(String sourceWordPath, String tmplateWordPath) throws Exception {
+        return this.convertMapByTemplate(sourceWordPath,tmplateWordPath,null);
+    }
+
+
 
     public String trim(String str) {
         if (str == null) {
             return "";
         } else {
             //去掉换行符
-            str = str.replaceAll("[\b\r\n)]*", "");
+            str = str.replaceAll("[\b\r)]*", "");
             str = str.replaceAll("[\u0007]*","");
             //去掉全角空格
             str = StringUtils.trim(str.replace((char) 12288, ' '));
@@ -197,7 +204,9 @@ public class WordUtil {
                 if (rangeValue != null && rangeValue.equals("") == false) {
                     result.put(key + dot + i, rangeValue);
                 } else {
-                    break;
+                   //如果没有值,且第1列没有值值
+                    result.put(key + dot + i, "");
+                    //break;
                 }
             } else {
                 break;

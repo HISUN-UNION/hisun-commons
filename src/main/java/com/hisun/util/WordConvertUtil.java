@@ -14,6 +14,9 @@ public class WordConvertUtil {
 
 
     private static WordConvertUtil util = null;
+    public static int PDF= SaveFormat.PDF;
+    public static int JPG=SaveFormat.JPEG;
+    public static int HTML = SaveFormat.HTML;
 
 
     private WordConvertUtil(){
