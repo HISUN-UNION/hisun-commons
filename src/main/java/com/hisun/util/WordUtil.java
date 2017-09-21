@@ -155,11 +155,10 @@ public class WordUtil {
             return "";
         } else {
             //去掉换行符
-            str = str.replaceAll("[\b\r)]*", "");
+            str = str.replaceAll("[\\s\b\r)]*", "");
             str = str.replaceAll("[\u0007]*","");
             //去掉全角空格
             str = StringUtils.trim(str.replace((char) 12288, ' '));
-
             return str;
         }
     }
