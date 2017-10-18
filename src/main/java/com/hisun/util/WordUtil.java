@@ -2,6 +2,7 @@ package com.hisun.util;
 
 import com.aspose.words.*;
 import org.apache.commons.collections.ArrayStack;
+import org.apache.commons.collections.map.LinkedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -30,6 +31,9 @@ public class WordUtil {
     public static String imageSign = "#image";
     public static String listSign = "#list";
     public static String rangeSign = "#range";
+
+    //空白行,对于Range数据,如果第一列数据为空,则该行以下的行全部跳过
+    private int blankRow=-1;
 
 
     private WordUtil() {
@@ -110,7 +114,7 @@ public class WordUtil {
 
     public Map<String, String> convertMapByTemplate(String sourceWordPath, String tmplateWordPath, String imageSaveDir) throws Exception {
 
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new LinkedMap();
         InputStream sourceStream = new FileInputStream(new File(sourceWordPath));
         Document sourceDoc = new Document(sourceStream);
 
@@ -120,6 +124,7 @@ public class WordUtil {
         //解析Word,找出对应cell的值,形成数据字段与实际数据的映射
 
         NodeCollection cells = sourceDoc.getChildNodes(NodeType.CELL, true);
+        int i = 0;
         for (Iterator<String> it = templateMap.keySet().iterator(); it.hasNext(); ) {
             String key = it.next();
             Integer value = templateMap.get(key);
@@ -128,16 +133,20 @@ public class WordUtil {
                     result.put(key, this.dealImageCell(sourceDoc, imageSaveDir));
                 }
             } else if (key.startsWith(rangeSign)) {
-                this.dealRangeCell(cells,key,value.intValue(),result);
-
+                if(i==0){
+                    //如果是第一列,则标识为rowkey,如果rowkey对应的值为空,则当前行及以下的行都不在计算
+                    this.dealRangeCell(cells,key,true,value.intValue(),result);
+                }else{
+                    this.dealRangeCell(cells,key,false,value.intValue(),result);
+                }
             } else if (key.startsWith(listSign)) {
                     result.put(key, trim(cells.get(value.intValue()).getText()));
             } else {
                 result.put(key, trim(cells.get(value.intValue()).getText()));
             }
-
+            i++;
         }
-
+        blankRow=-1;
         sourceStream.close();
         templateStream.close();
         return result;
@@ -166,7 +175,7 @@ public class WordUtil {
 
     private Map<String, Integer> generateTemplateMap(Document templateDoc) {
         //模板Word数据字段与位置映射
-        Map<String, Integer> templateMap = new HashMap<String, Integer>();
+        Map<String, Integer> templateMap = new LinkedMap();
         //获取模板文档的所有数据表格
         NodeCollection templateCells = templateDoc.getChildNodes(NodeType.CELL, true);
         Cell cell = null;
@@ -191,11 +200,15 @@ public class WordUtil {
     }
 
 
-    private void dealRangeCell(NodeCollection cells, String key, int rangeIndex, Map<String, String> result) {
+    private void dealRangeCell(NodeCollection cells, String key,boolean isRowKey, int rangeIndex, Map<String, String> result) {
         result.put(key + dot+"0", trim(cells.get(rangeIndex).getText()));
         int row = this.getRowCount(key);
         int col = this.getColCount(key);
         for (int i = 1; i <= row; i++) {
+            //去掉空行
+            if(blankRow>0&& i>=blankRow){
+                break;
+            }
             Cell rangeCell = (Cell) cells.get(rangeIndex + i * col);
             if (rangeCell != null) {
                 String rangeValue = cells.get(rangeIndex + i * col).getText();
@@ -203,9 +216,13 @@ public class WordUtil {
                 if (rangeValue != null && rangeValue.equals("") == false) {
                     result.put(key + dot + i, rangeValue);
                 } else {
-                   //如果没有值,且第1列没有值值
-                    result.put(key + dot + i, "");
-                    //break;
+                   //如果没有值,且是rowkey没有值
+                    if(isRowKey==true){
+                        blankRow = i;
+                        break;
+                    }else {
+                        result.put(key + dot + i, "");
+                    }//break;
                 }
             } else {
                 break;
@@ -267,8 +284,8 @@ public class WordUtil {
 
     public static void main(String[] args) throws Exception {
 
-        String wordPath = "/Users/zhouying/Documents/workspace/store/sha01/2017.docx";
-        String wordPathTemplate = "/Users/zhouying/Documents/workspace/store/sha01/sha01.docx";
+        String wordPath = "/Users/zhouying/Desktop/zzb-app-android/5名册列表/1/1州级领导班子名册-州委.docx";
+        String wordPathTemplate = "/Users/zhouying/Desktop/zzb-app-android/5名册列表/1/名册模板.docx";
 ////        java.util.List<byte[]> images = WordUtil.newInstance().extractImages("/Users/zhouying/Desktop/zzb-app-android/dd.docx");
 ////        String imagePath = "/Users/zhouying/Desktop/zzb-app-android/wordutil.jpg";
 ////        if(images.size()>0){
@@ -283,9 +300,10 @@ public class WordUtil {
 ////                        .extractImages("/Users/zhouying/Desktop/zzb-app-android/dd.docx",
 ////                                "/Users/zhouying/Desktop/zzb-app-android/"));
 //
-//        WordUtil.newInstance();
-//        InputStream stream = new FileInputStream(new File(wordPath));
-//        Document doc = new Document(stream);
+        WordUtil.newInstance();
+        InputStream stream = new FileInputStream(new File(wordPath));
+        Document doc = new Document(stream);
+
 //
 //        InputStream templateStream = new FileInputStream(new File(wordPathTemplate));
 //        Document templateDoc = new Document(templateStream);
@@ -294,10 +312,12 @@ public class WordUtil {
 ////        System.out.println(doc.getText());
 //        // System.out.println(doc.getChildNodes(NodeType.CELL,true).get(0).getText());
 //
-////        for (Paragraph para : (Iterable<Paragraph>) doc.getChildNodes(NodeType.PARAGRAPH, true)) {
-////            // Check if this paragraph is formatted using the TOC result based styles. This is any style between TOC and TOC9.
-////            System.out.println(para.getText());
-////        }
+        for (Paragraph para : (Iterable<Paragraph>) doc.getChildNodes(NodeType.PARAGRAPH, true)) {
+            // Check if this paragraph is formatted using the TOC result based styles. This is any style between TOC and TOC9.
+            if(para.getText().indexOf("...")>0) {
+                System.out.println(para.getText().substring(0,para.getText().indexOf(".")));
+            }
+        }
 //        Map<String, Integer> templateMap = new HashMap<String, Integer>();
 //        Map<String, String> dataMap = new HashMap<String, String>();
 //
@@ -346,19 +366,20 @@ public class WordUtil {
 //        templateStream.close();
 
 //       // System.out.println(WordUtil.newInstance().getColCount("#range.10*5["));
-//        WordUtil wordUtil  = WordUtil.newInstance();
-//        Map<String,String> dataMap =wordUtil.convertMapByTemplate(wordPath,wordPathTemplate,"/Users/zhouying/Desktop/zzb-app-android/");
-//
-//        for (Iterator<String> it = dataMap.keySet().iterator(); it.hasNext(); ) {
-//                String key = it.next();
-//                System.out.println(key + "=" + dataMap.get(key));
-//                System.out.println(wordUtil.getSqlField(key));
-//        }
+        WordUtil wordUtil  = WordUtil.newInstance();
+        Map<String,String> dataMap =wordUtil.convertMapByTemplate(wordPath,wordPathTemplate,"/Users/zhouying/Desktop/zzb-app-android/");
+
+        for (Iterator<String> it = dataMap.keySet().iterator(); it.hasNext(); ) {
+                String key = it.next();
+                System.out.println(key + "=" + dataMap.get(key));
+
+               // System.out.println(wordUtil.getSqlField(key));
+        }
 //
 //        System.out.println("==="+wordUtil.genInsertSql(dataMap,"1"));
 
-        WordUtil wordUtil  = WordUtil.newInstance();
-        System.out.println(wordUtil.trim("INSERT INTO APP_SH_A01 ( ID,APP_SH_PC_ID,A01_PX ,ywfpjl,mztjqk,xm,whcd,jg,xb,xgzdwjzw,ntzpbyj,cjgzsj,mz,rdsj,rxjbsj,shyj,csny ) VALUES ('4585aac4080d4f9ab3e0638d051f57b8','402880e95e8ad4ec015e8ad5df850001',1,'\u0007','\u0007','鲍忠银\u0007','在职\r研究生\u0007','长沙\u0007','男\u0007','州公共资源交易中心党组书记、主任\u0007','免现职\u0007','83.8\u0007','土家\u0007','87.6\u0007','15.10\u0007','同意\u0007','64.9\u0007')]"));
+       // WordUtil wordUtil  = WordUtil.newInstance();
+      //  System.out.println(wordUtil.trim("INSERT INTO APP_SH_A01 ( ID,APP_SH_PC_ID,A01_PX ,ywfpjl,mztjqk,xm,whcd,jg,xb,xgzdwjzw,ntzpbyj,cjgzsj,mz,rdsj,rxjbsj,shyj,csny ) VALUES ('4585aac4080d4f9ab3e0638d051f57b8','402880e95e8ad4ec015e8ad5df850001',1,'\u0007','\u0007','鲍忠银\u0007','在职\r研究生\u0007','长沙\u0007','男\u0007','州公共资源交易中心党组书记、主任\u0007','免现职\u0007','83.8\u0007','土家\u0007','87.6\u0007','15.10\u0007','同意\u0007','64.9\u0007')]"));
 
 
     }
