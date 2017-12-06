@@ -5,12 +5,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -105,8 +110,6 @@ public class JacksonUtil {
 	/**
 	 * 反序列化复杂Collection如List<Bean>,
 	 * 先使用createCollectionType()或contructMapType()构造类型, 然后调用本函数.
-	 * 
-	 * @see #createCollectionType(Class, Class...)
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> T fromJson(String jsonString, JavaType javaType) {

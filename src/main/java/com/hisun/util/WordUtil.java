@@ -1,7 +1,9 @@
 package com.hisun.util;
 
+import com.aspose.cells.Workbook;
+import com.aspose.cells.Worksheet;
+import com.aspose.cells.WorksheetCollection;
 import com.aspose.words.*;
-import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.collections.map.LinkedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -9,10 +11,10 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 /**
  * Created by zhouying on 2017/9/9.
@@ -32,16 +34,9 @@ public class WordUtil {
     public static String listSign = "#list";
     public static String rangeSign = "#range";
 
-    //空白行,对于Range数据,如果第一列数据为空,则该行以下的行全部跳过
-    private int blankRow=-1;
 
-
-    private WordUtil() {
-
-    }
-
+    private WordUtil() {}
     public static WordUtil newInstance() {
-
         if(util==null) {
             synchronized (WordUtil.class){
                 if(util==null){
@@ -65,6 +60,15 @@ public class WordUtil {
         License aposeLic = new License();
         aposeLic.setLicense(is);
     }
+
+    public Document read(String file) throws Exception{
+        InputStream stream = new FileInputStream(new File(file));
+        Document doc = new Document(stream);
+        stream.close();
+        return doc;
+    }
+
+
 
     public java.util.List<byte[]> extractImages(String wordPath) throws Exception {
         java.util.List<byte[]> images = new ArrayList<byte[]>();
@@ -122,9 +126,9 @@ public class WordUtil {
         Document templateDoc = new Document(templateStream);
         Map<String, Integer> templateMap = this.generateTemplateMap(templateDoc);
         //解析Word,找出对应cell的值,形成数据字段与实际数据的映射
-
         NodeCollection cells = sourceDoc.getChildNodes(NodeType.CELL, true);
-        int i = 0;
+        //获取到空白行
+        int blankRowSign = this.getBlankRowOverRangeSign(cells,templateMap);
         for (Iterator<String> it = templateMap.keySet().iterator(); it.hasNext(); ) {
             String key = it.next();
             Integer value = templateMap.get(key);
@@ -133,30 +137,71 @@ public class WordUtil {
                     result.put(key, this.dealImageCell(sourceDoc, imageSaveDir));
                 }
             } else if (key.startsWith(rangeSign)) {
-                if(i==0){
                     //如果是第一列,则标识为rowkey,如果rowkey对应的值为空,则当前行及以下的行都不在计算
-                    this.dealRangeCell(cells,key,true,value.intValue(),result);
-                }else{
-                    this.dealRangeCell(cells,key,false,value.intValue(),result);
-                }
+                    this.dealRangeCell(cells,blankRowSign,key,value.intValue(),result);
             } else if (key.startsWith(listSign)) {
                     result.put(key, trim(cells.get(value.intValue()).getText()));
             } else {
                 result.put(key, trim(cells.get(value.intValue()).getText()));
             }
-            i++;
         }
-        blankRow=-1;
         sourceStream.close();
         templateStream.close();
         return result;
     }
 
 
+    public Map<String, String> convertMapByTemplate(NodeCollection cells,Map<String, Integer> templateMap){
+        Map<String, String> result = new LinkedMap();
+        //获取到空白行
+        int blankRowSign = this.getBlankRowOverRangeSign(cells,templateMap);
+        for (Iterator<String> it = templateMap.keySet().iterator(); it.hasNext(); ) {
+            String key = it.next();
+            Integer value = templateMap.get(key);
+            if (key.startsWith(imageSign)) {
+
+            } else if (key.startsWith(rangeSign)) {
+                //如果是第一列,则标识为rowkey,如果rowkey对应的值为空,则当前行及以下的行都不在计算
+                this.dealRangeCell(cells,blankRowSign,key,value.intValue(),result);
+            } else if (key.startsWith(listSign)) {
+                result.put(key, trim(cells.get(value.intValue()).getText()));
+            } else {
+                result.put(key, trim(cells.get(value.intValue()).getText()));
+            }
+        }
+        return result;
+    }
+
     public Map<String, String> convertMapByTemplate(String sourceWordPath, String tmplateWordPath) throws Exception {
         return this.convertMapByTemplate(sourceWordPath,tmplateWordPath,null);
     }
 
+
+    private int getBlankRowOverRangeSign(NodeCollection cells, Map<String,Integer> templateMap){
+        //通过第一列来判断当前行数据是否有效
+        for (Iterator<String> it = templateMap.keySet().iterator(); it.hasNext(); ) {
+            String key = it.next();
+            if(key.startsWith(rangeSign)) {
+                Integer value = templateMap.get(key);
+                int row = this.getRowCount(key);
+                int col = this.getColCount(key);
+                for (int i = 1; i <= row; i++) {
+                    Cell rangeCell = (Cell) cells.get(value.intValue() + i * col);
+                    if (rangeCell != null) {
+                        String rangeValue = cells.get(value.intValue() + i * col).getText();
+                        rangeValue = trim(rangeValue);
+                        if (rangeValue == null || rangeValue.equals("") == true) {
+                            return i;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        return 0;
+    }
 
 
     public String trim(String str) {
@@ -173,7 +218,7 @@ public class WordUtil {
     }
 
 
-    private Map<String, Integer> generateTemplateMap(Document templateDoc) {
+    public Map<String, Integer> generateTemplateMap(Document templateDoc) {
         //模板Word数据字段与位置映射
         Map<String, Integer> templateMap = new LinkedMap();
         //获取模板文档的所有数据表格
@@ -182,6 +227,7 @@ public class WordUtil {
         //建立模板Word数据字段与cell位置的映射
         for (int index = 0; index < templateCells.getCount(); index++) {
             cell = (Cell) templateCells.get(index);
+
             String trimText = trim(cell.getText());
             if (trimText.startsWith(dataPrefix) || trimText.startsWith(specialDataPrefix)) {
                 templateMap.put(trimText, index);
@@ -200,13 +246,15 @@ public class WordUtil {
     }
 
 
-    private void dealRangeCell(NodeCollection cells, String key,boolean isRowKey, int rangeIndex, Map<String, String> result) {
+    private void dealRangeCell(NodeCollection cells, int blankRowSign,String key, int rangeIndex, Map<String, String> result) {
         result.put(key + dot+"0", trim(cells.get(rangeIndex).getText()));
         int row = this.getRowCount(key);
         int col = this.getColCount(key);
+        //空白行,对于Range数据,如果第一列数据为空,则该行以下的行全部跳过
+        int blankRow =-1;
         for (int i = 1; i <= row; i++) {
             //去掉空行
-            if(blankRow>0&& i>=blankRow){
+            if(i>=blankRowSign){
                 break;
             }
             Cell rangeCell = (Cell) cells.get(rangeIndex + i * col);
@@ -216,13 +264,7 @@ public class WordUtil {
                 if (rangeValue != null && rangeValue.equals("") == false) {
                     result.put(key + dot + i, rangeValue);
                 } else {
-                   //如果没有值,且是rowkey没有值
-                    if(isRowKey==true){
-                        blankRow = i;
-                        break;
-                    }else {
-                        result.put(key + dot + i, "");
-                    }//break;
+                    result.put(key + dot + i, "");
                 }
             } else {
                 break;
@@ -284,103 +326,85 @@ public class WordUtil {
 
     public static void main(String[] args) throws Exception {
 
-        String wordPath = "/Users/zhouying/Desktop/zzb-app-android/5名册列表/1/1州级领导班子名册-州委.docx";
-        String wordPathTemplate = "/Users/zhouying/Desktop/zzb-app-android/5名册列表/1/名册模板.docx";
-////        java.util.List<byte[]> images = WordUtil.newInstance().extractImages("/Users/zhouying/Desktop/zzb-app-android/dd.docx");
-////        String imagePath = "/Users/zhouying/Desktop/zzb-app-android/wordutil.jpg";
-////        if(images.size()>0){
-////            File file = new File(imagePath);
-////            FileOutputStream outputStream = new FileOutputStream(file);
-////            outputStream.write(images.get(0));
-////            outputStream.close();
-////        }
+//            WordUtil wordUtil = WordUtil.newInstance();
+//            String wordPath = "/Users/zhouying/Desktop/湘西州/测试数据/5名册列表/2/2州直单位领导干部名册.docx";
+//            String wordPathTemplate = "/Users/zhouying/Desktop/湘西州/测试数据/5名册列表/2/gbmca01.docx";
 //
+//            Document templateDoc = wordUtil.read(wordPathTemplate);
+//            Map<String, Integer> templateMap = wordUtil.generateTemplateMap(templateDoc);
 //
-////        System.out.println(WordUtil.newInstance()
-////                        .extractImages("/Users/zhouying/Desktop/zzb-app-android/dd.docx",
-////                                "/Users/zhouying/Desktop/zzb-app-android/"));
-//
-        WordUtil.newInstance();
-        InputStream stream = new FileInputStream(new File(wordPath));
-        Document doc = new Document(stream);
+//            Document document = wordUtil.read(wordPath);
+//            NodeCollection collection = document.getChildNodes(NodeType.TABLE, true);
+//            for(Iterator<Table> tables = collection.iterator(); tables.hasNext();){
+//                Table table = tables.next();
+//                NodeCollection cells = table.getChildNodes(NodeType.CELL,true);
+//               System.out.println(wordUtil.convertMapByTemplate(cells,templateMap));
+//            }
 
-//
-//        InputStream templateStream = new FileInputStream(new File(wordPathTemplate));
-//        Document templateDoc = new Document(templateStream);
-//
-//        //System.out.println(StringUtils.trim(doc.toString(SaveFormat.TEXT)));
-////        System.out.println(doc.getText());
-//        // System.out.println(doc.getChildNodes(NodeType.CELL,true).get(0).getText());
-//
-        for (Paragraph para : (Iterable<Paragraph>) doc.getChildNodes(NodeType.PARAGRAPH, true)) {
-            // Check if this paragraph is formatted using the TOC result based styles. This is any style between TOC and TOC9.
-            if(para.getText().indexOf("...")>0) {
-                System.out.println(para.getText().substring(0,para.getText().indexOf(".")));
-            }
-        }
-//        Map<String, Integer> templateMap = new HashMap<String, Integer>();
-//        Map<String, String> dataMap = new HashMap<String, String>();
-//
+        WordUtil wordUtil = WordUtil.newInstance();
+        String wordPathTemplate = "/Users/zhouying/Documents/workspace/store/mca01/gbrmspb/gbrmspb.docx";
+        String outWord =  "/Users/zhouying/Documents/workspace/store/mca01/gbrmspb/out.docx";
+        Document templateDoc = wordUtil.read(wordPathTemplate);
+        DocumentBuilder builder = new DocumentBuilder(templateDoc);
+
+//        NodeCollection paragraphs = templateDoc.getChildNodes(NodeType.PARAGRAPH,true);
+//        int index=0;
+//        for(Iterator<Paragraph> iterator= paragraphs.iterator();iterator.hasNext();){
+//            Paragraph paragraph = iterator.next();
+//            String trimText = wordUtil.trim(paragraph.getText());
+//            if (trimText.startsWith(dataPrefix) || trimText.startsWith(specialDataPrefix)) {
+//               // System.out.println(trimText);
+//                System.out.println("==="+index);
+//                builder.moveToParagraph(index,0);
+//                builder.;
+//            }
+//            index++;
+//        }
+
+
+//        NodeCollection tables = templateDoc.getChildNodes(NodeType.TABLE,true);
+//        int tableIndex =0;
+//        for(Iterator<Table> iterator= tables.iterator();iterator.hasNext();){
+//            Table table = iterator.next();
+//            NodeCollection rows =  table.getChildNodes(NodeType.ROW,true);
+//            int rowIndex=0;
+//            for(Iterator<Row> rowIterator= rows.iterator();rowIterator.hasNext();){
+//                Row row = rowIterator.next();
+//                NodeCollection cells =  row.getChildNodes(NodeType.CELL,true);
+//                int colIndex =0;
+//                for(Iterator<Cell> cellIterator= cells.iterator();cellIterator.hasNext();){
+//                    Cell cell = cellIterator.next();
+//                    String trimText = wordUtil.trim(cell.getText());
+//                    if (trimText.startsWith(dataPrefix) || trimText.startsWith(specialDataPrefix)) {
+//                        System.out.println(tableIndex+"-"+rowIndex+"-"+colIndex);
+//                        builder.moveToCell(tableIndex, rowIndex, colIndex, 0);
+//                        builder.write("周瑛");
+//                    }
+//                    colIndex++;
+//                }
+//                rowIndex++;
+//            }
+//            tableIndex++;
+//        }
+
+
 //        NodeCollection templateCells = templateDoc.getChildNodes(NodeType.CELL, true);
 //        Cell cell = null;
-//        // for (Cell cell : (Iterable<Cell>) doc.getChildNodes(NodeType.CELL, true)) {
+//        //建立模板Word数据字段与cell位置的映射
 //        for (int index = 0; index < templateCells.getCount(); index++) {
-//            // Check if this paragraph is formatted using the TOC result based styles. This is any style between TOC and TOC9.
-//
-//            // Node node = cells.get(index);
-//
-//
 //            cell = (Cell) templateCells.get(index);
 //
-//            // System.out.println("=="+cell.getText());
-//            String trimText = StringUtils.trim(cell.getText());
-//            if (trimText.startsWith("[") || trimText.startsWith("#")) {
-//                templateMap.put(trimText, index);
+//            String trimText = wordUtil.trim(cell.getText());
+//            if (trimText.startsWith(dataPrefix) || trimText.startsWith(specialDataPrefix)) {
+//                //builder.moveto
+//
+//               // builder.moveToCell(int tableIndex, int rowIndex, int columnIndex, int characterIndex);
+//               // builder.write("dsfsfsfdsfdsfsf测试");
+//
 //            }
-//
-//
-////            if (para.getParagraphFormat().getStyle().getStyleIdentifier() >= StyleIdentifier.TOC_1 && para.getParagraphFormat().getStyle().getStyleIdentifier() <= StyleIdentifier.TOC_9) {
-////                // Get the first tab used in this paragraph, this should be the tab used to align the page numbers.
-////                TabStop tab = para.getParagraphFormat().getTabStops().get(0);
-////                // Remove the old tab from the collection.
-////                para.getParagraphFormat().getTabStops().removeByPosition(tab.getPosition());
-////                // Insert a new tab using the same properties but at a modified position.
-////                // We could also change the separators used (dots) by passing a different Leader type
-////                para.getParagraphFormat().getTabStops().add(tab.getPosition() - 50, tab.getAlignment(), tab.getLeader());
-////            }
 //        }
-//
-//        // System.out.println(templateMap.keySet());
-//        NodeCollection cells = doc.getChildNodes(NodeType.CELL, true);
-//
-//        if (templateMap.size() > 0)
-//
-//
-//            for (Iterator<String> it = dataMap.keySet().iterator(); it.hasNext(); ) {
-//                String key = it.next();
-//                System.out.println(key + "=" + dataMap.get(key));
-//            }
-//
-//
-//        stream.close();
-//        templateStream.close();
 
-//       // System.out.println(WordUtil.newInstance().getColCount("#range.10*5["));
-        WordUtil wordUtil  = WordUtil.newInstance();
-        Map<String,String> dataMap =wordUtil.convertMapByTemplate(wordPath,wordPathTemplate,"/Users/zhouying/Desktop/zzb-app-android/");
-
-        for (Iterator<String> it = dataMap.keySet().iterator(); it.hasNext(); ) {
-                String key = it.next();
-                System.out.println(key + "=" + dataMap.get(key));
-
-               // System.out.println(wordUtil.getSqlField(key));
-        }
-//
-//        System.out.println("==="+wordUtil.genInsertSql(dataMap,"1"));
-
-       // WordUtil wordUtil  = WordUtil.newInstance();
-      //  System.out.println(wordUtil.trim("INSERT INTO APP_SH_A01 ( ID,APP_SH_PC_ID,A01_PX ,ywfpjl,mztjqk,xm,whcd,jg,xb,xgzdwjzw,ntzpbyj,cjgzsj,mz,rdsj,rxjbsj,shyj,csny ) VALUES ('4585aac4080d4f9ab3e0638d051f57b8','402880e95e8ad4ec015e8ad5df850001',1,'\u0007','\u0007','鲍忠银\u0007','在职\r研究生\u0007','长沙\u0007','男\u0007','州公共资源交易中心党组书记、主任\u0007','免现职\u0007','83.8\u0007','土家\u0007','87.6\u0007','15.10\u0007','同意\u0007','64.9\u0007')]"));
-
+        templateDoc.save(outWord);
 
     }
 
