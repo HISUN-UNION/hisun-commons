@@ -362,30 +362,39 @@ public class WordUtil {
 //        }
 
 
-//        NodeCollection tables = templateDoc.getChildNodes(NodeType.TABLE,true);
-//        int tableIndex =0;
-//        for(Iterator<Table> iterator= tables.iterator();iterator.hasNext();){
-//            Table table = iterator.next();
-//            NodeCollection rows =  table.getChildNodes(NodeType.ROW,true);
-//            int rowIndex=0;
-//            for(Iterator<Row> rowIterator= rows.iterator();rowIterator.hasNext();){
-//                Row row = rowIterator.next();
-//                NodeCollection cells =  row.getChildNodes(NodeType.CELL,true);
-//                int colIndex =0;
-//                for(Iterator<Cell> cellIterator= cells.iterator();cellIterator.hasNext();){
-//                    Cell cell = cellIterator.next();
-//                    String trimText = wordUtil.trim(cell.getText());
-//                    if (trimText.startsWith(dataPrefix) || trimText.startsWith(specialDataPrefix)) {
-//                        System.out.println(tableIndex+"-"+rowIndex+"-"+colIndex);
-//                        builder.moveToCell(tableIndex, rowIndex, colIndex, 0);
-//                        builder.write("周瑛");
-//                    }
-//                    colIndex++;
-//                }
-//                rowIndex++;
-//            }
-//            tableIndex++;
-//        }
+        NodeCollection tables = templateDoc.getChildNodes(NodeType.TABLE,true);
+        int tableIndex =0;
+        for(Iterator<Table> iterator= tables.iterator();iterator.hasNext();){
+            Table table = iterator.next();
+            NodeCollection rows =  table.getChildNodes(NodeType.ROW,true);
+            int rowIndex=0;
+            for(Iterator<Row> rowIterator= rows.iterator();rowIterator.hasNext();){
+                Row row = rowIterator.next();
+                NodeCollection cells =  row.getChildNodes(NodeType.CELL,true);
+                int colIndex =0;
+                for(Iterator<Cell> cellIterator= cells.iterator();cellIterator.hasNext();){
+                    Cell cell = cellIterator.next();
+                    String trimText = wordUtil.trim(cell.getText());
+                    if (trimText.startsWith(dataPrefix)) {
+                        System.out.println(tableIndex+"-"+rowIndex+"-"+colIndex);
+                        builder.moveToCell(tableIndex, rowIndex, colIndex, 0);
+                        builder.write("");
+                        templateDoc.getRange().replace(trimText,"",
+                                new FindReplaceOptions(FindReplaceDirection.FORWARD));
+                    }else if(trimText.startsWith(WordUtil.imageSign)){
+                        System.out.println(tableIndex+"-"+rowIndex+"-"+colIndex);
+                        builder.moveToCell(tableIndex, rowIndex, colIndex, 0);
+                        builder.insertImage("/Users/zhouying/Documents/workspace/store/mca01/ffcb864cf4ff41e4b91249b67e59ee58.jpg",94,122);
+                        templateDoc.getRange().replace(trimText,"",
+                                new FindReplaceOptions(FindReplaceDirection.FORWARD));
+                        System.out.println(trimText);
+                    }
+                    colIndex++;
+                }
+                rowIndex++;
+            }
+            tableIndex++;
+        }
 
 
 //        NodeCollection templateCells = templateDoc.getChildNodes(NodeType.CELL, true);
