@@ -137,7 +137,6 @@ public class WordUtil {
                     result.put(key, this.dealImageCell(sourceDoc, imageSaveDir));
                 }
             } else if (key.startsWith(rangeSign)) {
-                    //如果是第一列,则标识为rowkey,如果rowkey对应的值为空,则当前行及以下的行都不在计算
                     this.dealRangeCell(cells,blankRowSign,key,value.intValue(),result);
             } else if (key.startsWith(listSign)) {
                     result.put(key, trim(cells.get(value.intValue()).getText()));
@@ -185,7 +184,7 @@ public class WordUtil {
                 Integer value = templateMap.get(key);
                 int row = this.getRowCount(key);
                 int col = this.getColCount(key);
-                for (int i = 1; i <= row; i++) {
+                for (int i = 0; i < row; i++) {
                     Cell rangeCell = (Cell) cells.get(value.intValue() + i * col);
                     if (rangeCell != null) {
                         String rangeValue = cells.get(value.intValue() + i * col).getText();
@@ -200,7 +199,7 @@ public class WordUtil {
                 break;
             }
         }
-        return 0;
+        return -1;
     }
 
 
@@ -247,27 +246,27 @@ public class WordUtil {
 
 
     private void dealRangeCell(NodeCollection cells, int blankRowSign,String key, int rangeIndex, Map<String, String> result) {
-        result.put(key + dot+"0", trim(cells.get(rangeIndex).getText()));
-        int row = this.getRowCount(key);
-        int col = this.getColCount(key);
-        //空白行,对于Range数据,如果第一列数据为空,则该行以下的行全部跳过
-        int blankRow =-1;
-        for (int i = 1; i <= row; i++) {
-            //去掉空行
-            if(i>=blankRowSign){
-                break;
-            }
-            Cell rangeCell = (Cell) cells.get(rangeIndex + i * col);
-            if (rangeCell != null) {
-                String rangeValue = cells.get(rangeIndex + i * col).getText();
-                rangeValue = trim(rangeValue);
-                if (rangeValue != null && rangeValue.equals("") == false) {
-                    result.put(key + dot + i, rangeValue);
-                } else {
-                    result.put(key + dot + i, "");
+        if(blankRowSign!=0){//等于0代表第一行为空白,不作处理
+            result.put(key + dot+"0", trim(cells.get(rangeIndex).getText()));
+            int row = this.getRowCount(key);
+            int col = this.getColCount(key);
+            for (int i = 1; i <= row; i++) {
+                //去掉空行
+                if(blankRowSign>0 && i>=blankRowSign){
+                    break;
                 }
-            } else {
-                break;
+                Cell rangeCell = (Cell) cells.get(rangeIndex + i * col);
+                if (rangeCell != null) {
+                    String rangeValue = cells.get(rangeIndex + i * col).getText();
+                    rangeValue = trim(rangeValue);
+                    if (rangeValue != null && rangeValue.equals("") == false) {
+                        result.put(key + dot + i, rangeValue);
+                    } else {
+                        result.put(key + dot + i, "");
+                    }
+                } else {
+                    break;
+                }
             }
         }
     }

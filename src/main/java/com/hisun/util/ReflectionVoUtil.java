@@ -48,7 +48,6 @@ public class ReflectionVoUtil {
             Field field = clz.getDeclaredField(name);
             if(field.isAccessible()){
                 field.set(vo,value);
-
             }else{
                 field.setAccessible(true);
                 field.set(vo,value);
@@ -64,8 +63,8 @@ public class ReflectionVoUtil {
     }
 
 
-    private static String getMethodName(String fildeName) throws Exception{
-        byte[] items = fildeName.getBytes();
+    private static String getMethodName(String fieldName) throws Exception{
+        byte[] items = fieldName.getBytes();
         items[0] = (byte) ((char) items[0] - 'a' + 'A');
         return new String(items);
     }
