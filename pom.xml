@@ -116,6 +116,10 @@
       <!--<version>17.8</version>-->
       <!--<classifier>jdk16</classifier>-->
     <!--</dependency>-->
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>sqljdbc4</artifactId>
+    </dependency>
   </dependencies>
 
   <!-- 生命周期及插件配置-->
