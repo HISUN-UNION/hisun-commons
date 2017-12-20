@@ -28,12 +28,4 @@ public class C3p0Util {
         return dataSource;
     }
 
-    public static void main(String[] args) throws Exception{
-        DataSource dataSource = C3p0Util.getSqlServerDataSource("192.168.0.108",
-                                                                "1433",
-                                                                "gcmis","sa","Admin@123");
-
-        System.out.println(dataSource.getConnection());
-
-    }
 }
