@@ -1,5 +1,6 @@
 package com.hisun.util;
 
+import org.apache.commons.lang3.*;
 import org.apache.log4j.Logger;
 
 import java.text.ParseException;
@@ -28,6 +29,8 @@ public class DateUtil {
     public static final String TIMES_PATTERN = "HH:mm:ss";
     public static final String NOCHAR_PATTERN = "yyyyMMddHHmmss";
     public static final String NOCHAR_PATTERN2 = "yyyyMMdd";
+    public static final String yyyydotMM="yyyy.MM";
+    public static final String yyyyMMdd = "yyyyMMdd";
 
     private static final Logger logger = Logger.getLogger(DateUtil.class);
 
@@ -558,4 +561,22 @@ public class DateUtil {
         }
         return returnDate;
     }
+
+    public static String covertPatternStringToOtherPatternString(String source,String sourcePattern,
+                                                                 String destPattern) {
+
+        if(StringUtils.isEmpty(source)==false){
+            SimpleDateFormat sdf = new SimpleDateFormat(sourcePattern);
+            try {
+                Date sourceDate = sdf.parse(source);
+                SimpleDateFormat desSdf = new SimpleDateFormat(destPattern);
+                return desSdf.format(sourceDate);
+            }catch (Exception e){
+                return "";
+            }
+        }else{
+            return "";
+        }
+    }
+
 }

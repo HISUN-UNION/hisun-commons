@@ -18,7 +18,11 @@ public class ReflectionVoUtil {
         for(Field field : fields){
             String name = field.getName();
             Method method = findGetMethod(clz,name);
-            Object object = method.invoke(vo);
+            Object object=null;
+            if(method!=null){
+                object = method.invoke(vo);
+            }
+
 
 //            String genericType = field.getGenericType().toString();
 //            if(genericType.equals("class java.lang.String")){
@@ -59,7 +63,13 @@ public class ReflectionVoUtil {
 
 
     public static Method findGetMethod(Class clz,String name)throws Exception{
-        return (Method) clz.getMethod("get" + getMethodName(name));
+        Method method =null;
+        try {
+            method = clz.getMethod("get" + getMethodName(name));
+        }catch (NoSuchMethodException e){
+
+        }
+        return  method;
     }
 
 
