@@ -154,4 +154,11 @@ public class FileUtil {
         return newPath.toString();
 
     }
+
+
+    public static void  copyFile(String source, String targetPath) throws IOException {
+        File sourceFile = new File(source);
+        File targetFile = new File(targetPath + sourceFile.getName());
+        FileUtils.copyFile(sourceFile, targetFile);
+    }
 }
