@@ -58,6 +58,15 @@ public class FileUtil {
         }
     }
 
+    public static String getFileName(String filePath){
+        if(StringUtils.isEmpty(filePath)==false){
+            return filePath.substring(filePath.lastIndexOf(File.separator) + 1);
+        }else{
+            return "";
+        }
+
+    }
+
     public static String readInputStream(InputStream inputStream) throws IOException {
         return readInputStream(inputStream, "utf-8", inputStream.available());
     }
