@@ -62,7 +62,9 @@ public class CompressUtil {
         File file2zip = new File(filePath);
         if (file2zip.isFile()) {
             zaos.putArchiveEntry(new ZipArchiveEntry(pathName + file2zip.getName()));
-            IOUtils.copy(new FileInputStream(file2zip.getAbsolutePath()), zaos);
+            FileInputStream fis = new FileInputStream(file2zip.getAbsolutePath());
+            IOUtils.copy(fis, zaos);
+            fis.close();
             zaos.closeArchiveEntry();
         } else {
             File[] files = file2zip.listFiles();
@@ -74,7 +76,9 @@ public class CompressUtil {
                     zip(zaos, files[i].getAbsolutePath(), pathName + files[i].getName() + File.separator);
                 } else {
                     zaos.putArchiveEntry(new ZipArchiveEntry(pathName + files[i].getName()));
-                    IOUtils.copy(new FileInputStream(files[i].getAbsolutePath()), zaos);
+                    FileInputStream fis = new FileInputStream(files[i].getAbsolutePath());
+                    IOUtils.copy(fis, zaos);
+                    fis.close();
                     zaos.closeArchiveEntry();
                 }
             }
@@ -107,6 +111,7 @@ public class CompressUtil {
                     inputStream = zf.getInputStream(zipArchiveEntry);
                     IOUtils.copy(inputStream, fileOutputStream);
                     fileOutputStream.close();
+                    inputStream.close();
                 }
             }
         } catch (Exception e) {
