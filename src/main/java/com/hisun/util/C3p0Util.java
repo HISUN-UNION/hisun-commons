@@ -49,9 +49,4 @@ public class C3p0Util {
         return dataSource;
     }
 
-
-    public static void main(String[] args) throws Exception{
-        System.out.println(getMySQLDataSource("192.168.70.59","45017","zwhzyq","root","admin"));
-    }
-
 }

@@ -31,6 +31,7 @@ public class DateUtil {
     public static final String NOCHAR_PATTERN2 = "yyyyMMdd";
     public static final String yyyydotMM="yyyy.MM";
     public static final String yyyyMMdd = "yyyyMMdd";
+    public static final String yyyyMM = "yyyyMM";
 
     private static final Logger logger = Logger.getLogger(DateUtil.class);
 
@@ -568,9 +569,13 @@ public class DateUtil {
         if(StringUtils.isEmpty(source)==false){
             SimpleDateFormat sdf = new SimpleDateFormat(sourcePattern);
             try {
+                if(source.length()>sourcePattern.length()){
+                    source = source.substring(0,sourcePattern.length());
+                }
                 Date sourceDate = sdf.parse(source);
                 SimpleDateFormat desSdf = new SimpleDateFormat(destPattern);
                 return desSdf.format(sourceDate);
+
             }catch (Exception e){
                 return "";
             }

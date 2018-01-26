@@ -141,7 +141,11 @@ public class WordUtil {
             } else if (key.startsWith(listSign)) {
                     result.put(key, trim(cells.get(value.intValue()).getText()));
             } else {
-                   result.put(key, trim(cells.get(value.intValue()).getText()));
+                if(key.toLowerCase().contains("gzjlstr")) {
+                    result.put(key, cells.get(value.intValue()).getText());
+                }else {
+                    result.put(key, trim(cells.get(value.intValue()).getText()));
+                }
             }
         }
         sourceStream.close();
