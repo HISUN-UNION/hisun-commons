@@ -86,12 +86,13 @@ public class SqliteDBUtil {
      * @throws SQLException
      * @throws ClassNotFoundException
      */
-    public int createDatabase(String dbname) throws ClassNotFoundException, SQLException {
+    public Statement createDatabase(String dbname) throws ClassNotFoundException, SQLException {
         Statement statement = getStatementByDBName(dbname);
+
         if (null != statement) {
-            return 1;
+            return statement;
         }
-        return 0;
+        return null;
     }
 
     /**
